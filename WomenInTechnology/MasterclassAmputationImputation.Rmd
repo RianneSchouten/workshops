@@ -12,19 +12,11 @@ body{ /* Normal  */
   font-family: Book Antiqua;
 }
 h1.title {
-  font-size: 38px;
+  font-size: 34px;
   color: DarkRed;
 }
 h2 { /* Header 2 */
   font-size: 22px;
-}
-h3 { /* Header 3 */
-  font-size: 22px;
-  color: DarkRed;
-}
-h4 { /* Header 4 */
-  font-size: 22px;
-  color: DarkRed;
 }
 h5 { /* Header 5 */
   font-size: 18px;
@@ -36,7 +28,7 @@ h5 { /* Header 5 */
 
 ## Download instructies
 
-All files can be found in my [github repository](http://rianneschouten.github.io). Go to the repository and download the files to your local computer. The folder contains 3 important files:
+All files can be found in one of my github repositories: [https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology](https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology). Go to the repository and download the files to your local computer. The folder contains 3 important files:
 
 1. The .html file contains everything we will discuss during the masterclass. It shows the explanation, the R code and the output of the R code. You can also use it as a reference for later use. 
 2. The .Rmd file is the markdown code for the .html file. You can open this file in RStudio and change it to your likings. Click on the 'Knit' button to run the file and overwrite the .html file. 
@@ -160,7 +152,7 @@ mads <- ampute(data,
                run = TRUE)
 ```
 
-Explanation of all the arguments can be found in the vignette [https://rianneschouten.github.io/mice_ampute/vignette/ampute.html](https://rianneschouten.github.io/mice_ampute/vignette/ampute.html). Today, we will focus on the `patterns` and `mech` argument. 
+Explanation of the underlying method, as well as a demonstration of why this method works better than traditional methods, is given in the research article [Generating missing values for simulation purposes: A multivariate amputation procedure](https://www.tandfonline.com/doi/full/10.1080/00949655.2018.1491577). Explanation of all the arguments of `ampute` can be found in a vignette [https://rianneschouten.github.io/mice_ampute/vignette/ampute.html](https://rianneschouten.github.io/mice_ampute/vignette/ampute.html). Today, we will focus on two arguments: `patterns` and `mech`. 
 
 First, we run the function with the default options. The output of `ampute` is always a `mads` object, and contains all the arguments used in the amputation procedure. We ask for the `pattern` object by `mads$patterns`.
 
@@ -310,9 +302,13 @@ ggplot(plotdata, aes(pH, density, color = R)) +
                      labels = c('missing', 'observed'))
 ```
 
-On which side of the distribution `ampute` should focus, can be manipulated with argument `type`. 
+The argument `type` determines on which side of the distribution `ampute` focuses.
 
-Now, what we also see, is that when we delete the incomplete rows from the dataset, the dataset changes and the regression line also changes. 
+```{r}
+mads$type
+```
+
+In addition, we see that when we delete the incomplete rows from the dataset, the regression lines change. 
 
 ```{r}
 true_coefs
@@ -321,6 +317,8 @@ MAR_coefs
 ```
 
 Because of the missingness, bias appears in the estimates. In addition, because we remove all incomplete rows from the dataset, the analyzed dataset becomes smaller and the uncertainty about the estimates becomes larger. Hence, the standard errors increase. 
+
+If you want to know more about the influence of missing data mechanisms and missing data types on multivariate normal distributions, read our research article [The dance of the mechanisms: How observed information influences the validity of missingness assumptions](https://journals.sagepub.com/doi/full/10.1177/0049124118799376).
 
 ## 3. Missing data methods
 
@@ -474,9 +472,12 @@ fit <- with(imps, lm(alcohol ~ density))
 out <- summary(pool(fit))
 ```
 
+Understand the method of multiple imputation and the functionality of `mice` by reading the brilliant article of stef van Buuren:  [mice: Multivariate Imputation by Chained
+Equations in R](https://www.jstatsoft.org/article/view/v045i03/v45i03.pdf)
+
 ## 4. Evaluation
 
-It is not wise to compare an imputed dataset with an amputed dataset only once. The result could be greatly influenced by sampling error. If you want to set up a simulation study, reading Brand, 2003 might be a good start. He explains two ways to compare the imputed dataset with the complete dataset. 
+It is not wise to compare an imputed dataset with an amputed dataset only once. The result could be greatly influenced by sampling error. If you want to set up a simulation study, reading [this](https://onlinelibrary.wiley.com/doi/abs/10.1111/1467-9574.00219) article from Jaap Brand  might be a good start. He explains two ways to compare the imputed dataset with the complete dataset. 
 
 Furthermore, there are other evaluation measures to think of when you compare the imputed dataset with the truth. A data scientist, for instance, might be more interested in the prediction error. The difference between evaluating bias and standard errors on the one hand, and evaluation prediction error measures on the other hand, is still unclear. More research on that has to be done. 
 
