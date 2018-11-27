@@ -22,21 +22,27 @@ h5 { /* Header 5 */
   font-size: 18px;
   color: DarkBlue;
 }
+h6 { /* Header 6 */
+  font-size: 14px;
+  color: DarkRed;
+}
 </style>  
 
 ---
 
-## Download instructies
+## Download instructions
 
-All files can be found in one of my github repositories: [https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology](https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology). Go to the repository and download the files to your local computer. The folder contains 3 important files:
+All files can be found in one of my github repositories: [https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology](https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology). To download the files, go to [https://minhaskamal.github.io/DownGit/#/home](https://minhaskamal.github.io/DownGit/#/home) and paste the link of the repository. Then click the button 'Download'. 
+
+The folder contains the dataset, some image and 3 other files:
 
 1. The .html file contains everything we will discuss during the masterclass. It shows the explanation, the R code and the output of the R code. You can also use it as a reference for later use. 
-2. The .Rmd file is the markdown code for the .html file. You can open this file in RStudio and change it to your likings. Click on the 'Knit' button to run the file and overwrite the .html file. 
-3. The R code is also saved in a .R file. Open this file with RStudio and run lines by clicking CTRL + ENTER. 
+2. The .Rmd file is the markdown code for the .html file. You can open this file in RStudio and change it to your likings. Click on the 'Knit' button to run the file and overwrite the .html file. When you do this the first time, it will ask for the installation of some packages. 
+3. The R code is also saved in a .R file. Open this file with RStudio and run lines by pressing CTRL + ENTER. 
 
 To actively participate in the masterclass, you need R and RStudio. These open source software packages can be downloaded. Information about installation is available [here](https://courses.edx.org/courses/UTAustinX/UT.7.01x/3T2014/56c5437b88fa43cf828bff5371c6a924/). For R, you go to [https://www.r-project.org/](https://www.r-project.org/). For RStudio, you go to [https://www.rstudio.com/](https://www.rstudio.com/).
 
-We start by opening the .R file and running the following lines to install two necessary packages. Installation of packages you only have to do once, and you need a wifi connection for it. 
+We start by opening the .R file and running the following lines to install two necessary packages. Installation of packages is a one-time event. 
 
 ```{r eval = FALSE}
 install.packages("mice")
@@ -45,9 +51,9 @@ install.packages("ggplot2")
 
 Then, you load the packages in the current R session by using `library`. 
 
-```{r}
-library(mice)
-library(ggplot2)
+```{r warning = FALSE}
+library(mice, warn.conflicts = FALSE, quietly = TRUE)
+library(ggplot2, warn.conflicts = FALSE, quietly = TRUE)
 ```
 
 Now, we are ready to start! 
@@ -204,11 +210,14 @@ The proportion of incomplete rows, and the spreading of the patterns over the in
 
 In missing data theory, we divide missingness into three categories:
 
-*1. Missing Completely At Random (MCAR):* Missingness is not related to any variable. The probability to be missing is fixed.  For instance: Pr(`density` = missing) = 0.5
+######1. Missing Completely At Random (MCAR): 
+Missingness is not related to any variable. The probability to be missing is fixed.  For instance: Pr(`density` = missing) = 0.5
 
-*2. Missing At Random (MAR):* Missingness is related to one or more observed variables. Then, Pr(`density` = missing) = `pH` or Pr(`density` = missing) = `alcohol` or Pr(`density` = missing) = a combination of the variables `alcohol` and `pH`. The combination is obtained by using the `weights` argument to obtain weighted sum scores.
+######2. Missing At Random (MAR): 
+Missingness is related to one or more observed variables. Then, Pr(`density` = missing) = `pH` or Pr(`density` = missing) = `alcohol` or Pr(`density` = missing) = a combination of the variables `alcohol` and `pH`. The combination is obtained by using the `weights` argument to obtain weighted sum scores.
 
-*3. Missing Not At Random (MNAR):* Missingness is related to the missingness itself or to an unobserved variable. Then, Pr(`density` = missing) = `density` or Pr(`density` = missing) = `?`. 
+######3. Missing Not At Random (MNAR):
+Missingness is related to the missingness itself or to an unobserved variable. Then, Pr(`density` = missing) = `density` or Pr(`density` = missing) = `?`. 
 
 In `ampute`, the easiest way to create one of these missing data mechanisms is by using the argument `mech`. 
 
@@ -502,7 +511,7 @@ For regression analysis with MAR missingness, regression imputation might be suf
 ## Contact details
 
 Do not hestitate to ask question by email.
-My contact details are on [rianneschouten.github.io](rianneschouten.github.io)
+My contact details are on [https://rianneschouten.github.io/](https://rianneschouten.github.io/)
 Also, follow me on twitter:
 
 ![](missdata.png)
