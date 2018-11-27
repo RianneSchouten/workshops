@@ -1,0 +1,268 @@
+---
+title: "Generating missing values for simulation purposes: A multivariate amputation approach"
+author: |
+  | Rianne Schouten
+institute: |
+  | 1. University Utrecht, Department of Methodology and Statistics
+  | 2. DPA Professionals, Data Science Excellence Program
+date: "July 7, 2017"
+output:
+  beamer_presentation: 
+    includes:
+      in_header: preamble.tex
+    theme: default
+    colortheme: "beaver"
+
+---
+
+# Amputation
+
+```{r, include = FALSE}
+require(mice)
+require(lattice)
+require(MASS)
+require(Matrix)
+```
+
+Amputation is the generation of missing values in complete data 
+
+Overview:
+
+- Why? 
+- What? 
+- How? 
+
+```{r, eval = FALSE}
+require(mice)
+?ampute
+```
+
+# Amputation: Why? 
+
+Evaluation of missing data methodologies:
+\begin{enumerate}
+\item Simulate complete data set
+\item Generate missing values
+\item Deal with missing data with new method
+\item Compare statistical inferences 
+\end{enumerate}
+
+But also:
+\begin{itemize}
+\item Planned missing data survey designs
+\item Investigate measurement errors
+\item See effect missing data on your analyses
+\end{itemize}
+
+```{r, include = FALSE}
+sigma <- nearPD(matrix(c(1, 0.5, 0.7, 
+                         0.5, 1, 0.2,
+                         0.7, 0.2, 1), 3, 3))$mat
+sigma
+
+set.seed(1234)
+data <- mvrnorm(mu = c(0, 0, 0), 
+                Sigma = sigma, 
+                n = 100000)
+data <- as.data.frame(data)
+names(data) <- c("Income", "Minutes", "Age")
+amp <- ampute(data, patterns =  c(0, 1, 1), prop = 0.5)
+customer_data <- amp$amp
+```
+
+# Amputation: What? 
+
+- Proportion
+- Amputed variables
+
+# Amputation: What? 
+
+- Proportion
+- Amputed variables
+- Mechanism
+
+\vspace{-1cm}
+
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{align*}
+\text{MCAR} &: \text{Mis not related to X or Y at all} \\
+\text{MAR} &: \text{Mis related to X but not to Y} \\
+\text{MNAR} &: \text{Mis related to Y}\\
+\end{align*}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[height=60mm]{SUA.pdf}
+\end{figure}
+\end{column}
+\end{columns}
+
+# Amputation: What? 
+
+```{r}
+# Customers Phone Company
+head(customer_data)
+```
+
+# Amputation: What? 
+
+\begin{figure}
+\centering
+  \includegraphics[width=110mm]{hists_2.pdf}
+\end{figure}
+
+\vspace{-1cm}
+
+\begin{align*}
+\text{MCAR} &: Pr(Income = missing) = 0.5 \\
+\text{MAR} &: Pr(Income = missing) = Age \\
+\text{MNAR} &: Pr(Income = missing) = Income \\
+\end{align*} 
+
+# Amputation: What? 
+
+- Proportion
+- Amputed variables
+- Mechanism
+- Influencing variables
+- Severity
+- Missingness distribution
+
+# Amputation: What? 
+
+\begin{figure}
+  \includegraphics[width=100mm, height=60mm]{types.pdf}
+\end{figure}
+
+# Amputation: How? 
+
+\begin{columns}
+
+\begin{column}{0.3\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[height=60mm]{SUA_1.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Amputation: How? 
+
+\begin{columns}
+
+\begin{column}{0.3\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\item $Y_2$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[height=60mm]{SUA_2.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Amputation: How? 
+
+\begin{columns}
+
+\begin{column}{0.3\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\item $Y_2$
+\item $\dots$
+\item $Y_l$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[height=60mm]{SUA.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Amputation with `ampute` 
+
+Multivariate Amputation:
+\vspace{-5mm}
+\begin{figure}
+  \includegraphics[height=60mm]{Scheme_large.pdf}
+\end{figure}
+
+# Amputation with `ampute` 
+
+`
+ampute(data, prop = 0.5, patterns = NULL, freq = NULL, mech = "MAR", weights = NULL, cont = TRUE, type = NULL, odds = NULL, bycases = TRUE, run = TRUE)
+`
+
+```{r}
+amp <- ampute(data)
+class(amp)
+```
+
+# Amputation with `ampute` 
+
+```{r}
+head(amp$amp)
+```
+
+# Documentation
+
+```{r, eval = FALSE}
+require(mice)
+?ampute
+```
+\small
+
+**Vignette:**
+
+https://github.com/RianneSchouten/Amputation_with_Ampute
+
+\vspace{5mm}
+**Contact:**
+
+Rianne Schouten, r.m.schouten\@uu.nl, rianne.schouten\@dpa.nl
+
+\begin{figure}
+\includegraphics[width=3cm]{uu_logo}\hspace*{2mm}
+\includegraphics[width=3cm]{dpa_logo}
+\end{figure}
+
+# Additional slides
+
+A missing data pattern is a specific combination of variables with missing values and variables without missing values. 
+
+`0`: incomplete variable
+
+`1`: complete variable
+
+```{r}
+mypat <- matrix(c(0, 0, 1,
+                  0, 1, 1), 
+                nrow = 2, byrow = TRUE)
+```
+
+# Additional slides
+
+\begin{figure}
+  \includegraphics[width=100mm, height=60mm]{types_shifted.pdf}
+\end{figure}
+
+# Additional slides
+
+\begin{figure}
+  \includegraphics[height=25mm]{Table.pdf}
+\end{figure}

@@ -1,0 +1,514 @@
+---
+title: "Dealing with missing data in R"
+subtitle: "Masterclass European Women in Technology"
+author: "Rianne Schouten"
+date: "29 november 2018"
+output: html_document
+---
+
+<style type="text/css">
+body{ /* Normal  */
+  font-size: 14px;
+  font-family: Book Antiqua;
+}
+h1.title {
+  font-size: 38px;
+  color: DarkRed;
+}
+h2 { /* Header 2 */
+  font-size: 22px;
+}
+h3 { /* Header 3 */
+  font-size: 22px;
+  color: DarkRed;
+}
+h4 { /* Header 4 */
+  font-size: 22px;
+  color: DarkRed;
+}
+h5 { /* Header 5 */
+  font-size: 18px;
+  color: DarkBlue;
+}
+</style>  
+
+---
+
+## Download instructies
+
+All files can be found in my [github repository](http://rianneschouten.github.io). Go to the repository and download the files to your local computer. The folder contains 3 important files:
+
+1. The .html file contains everything we will discuss during the masterclass. It shows the explanation, the R code and the output of the R code. You can also use it as a reference for later use. 
+2. The .Rmd file is the markdown code for the .html file. You can open this file in RStudio and change it to your likings. Click on the 'Knit' button to run the file and overwrite the .html file. 
+3. The R code is also saved in a .R file. Open this file with RStudio and run lines by clicking CTRL + ENTER. 
+
+To actively participate in the masterclass, you need R and RStudio. These open source software packages can be downloaded. Information about installation is available [here](https://courses.edx.org/courses/UTAustinX/UT.7.01x/3T2014/56c5437b88fa43cf828bff5371c6a924/). For R, you go to [https://www.r-project.org/](https://www.r-project.org/). For RStudio, you go to [https://www.rstudio.com/](https://www.rstudio.com/).
+
+We start by opening the .R file and running the following lines to install two necessary packages. Installation of packages you only have to do once, and you need a wifi connection for it. 
+
+```{r eval = FALSE}
+install.packages("mice")
+install.packages("ggplot2")
+```
+
+Then, you load the packages in the current R session by using `library`. 
+
+```{r}
+library(mice)
+library(ggplot2)
+```
+
+Now, we are ready to start! 
+
+---
+
+## Introduction 
+
+**My name is**
+
+Rianne Schouten, 27 years old and I love kickboxing, research and Indian food.
+
+**As missing data methodologist, I**
+
+1. Choose my dataset and define the truth
+2. Ampute the data
+3. Apply missing data method
+4. Analyze the imputed data and compare with the truth
+
+In this workshop we will work through the same four steps. We take some extra time for step 2, to understand missingness mechanisms. Step 3 and 4 will be interwoven. 
+
+A simulation normally contains many repetitions to account for sampling error. We will run the procedure only once. To make sure all of us have the same output, we set a seed. 
+
+```{r}
+set.seed(111)
+```
+
+---
+
+## 1. Dataset
+
+A simulation always starts with a complete dataset. This can be a simulated dataset or a real dataset. One way to simulate a dataset is by using the package `MASS`. I often use the function `mvrnorm` which samples from a multivariate normal distribution. 
+
+Today we will use a dataset from Kaggle: [Red Wine Quality](https://www.kaggle.com/uciml/red-wine-quality-cortez-et-al-2009/data). 
+
+```{r}
+data <- read.csv("red_wine_quality.txt", sep = '\t')
+data <- data[, c('alcohol', 'density', 'pH')]
+```
+
+Let's start by inspecting the data a little bit. 
+
+```{r}
+nrow(data)
+summary(data)
+cor(data)
+```
+
+```{r}
+plotdata <- data
+ggplot(plotdata, aes(density, alcohol)) +
+  geom_point()
+```
+
+Today, we will evaluate the beta coefficient of a linear regression model where we regress `alcohol` on `density`. Let's assume we are able to measure the density of the wine, and based on that measure we want to estimate how much alcohol is in the wine.
+
+```{r}
+truemodel <- glm(alcohol ~ density, family = 'gaussian', data)
+true_coefs <- summary(truemodel)$coefficients
+true_coefs
+```
+
+```{r}
+ggplot(plotdata, aes(density, alcohol)) +
+  geom_point() +
+  geom_abline(slope = true_coefs[2, 1], 
+              intercept = true_coefs[1, 1],
+              color = 'black') +
+  geom_text(aes(x = 1.003, y = 8.3), 
+            label = 'complete', color = 'black')
+```
+
+In particular, we are interested in the beta coefficient of `density` and as we have seen, this value is `r true_coefs[2, 1]` with a standard error of `r true_coefs[2, 2]`.
+
+We define these values to be the truth and will now continue with our simulation. 
+
+---
+
+## 2. Amputation
+
+The generation of missing values is called *amputation*. The goal of the amputation procedure is always to generate sophisticated, realistic missingness. In other words, it should represent the real world situation as best as possible.
+
+We will discuss two important aspects of amputation:
+
+1) Generating missingness in multiple variables.
+2) Influence the cause/origin/reason for the missingness. 
+
+We developed a multivariate amputation procedure and implemented this procedure in R-function `ampute` in package **mice**. 
+
+```{r eval = FALSE}
+?ampute
+mads <- ampute(data,
+               prop = 0.5,
+               patterns = NULL,
+               freq = NULL,
+               mech = "MAR",
+               weights = NULL,
+               cont = TRUE,
+               type = NULL, 
+               odds = NULL, 
+               bycases = TRUE,
+               run = TRUE)
+```
+
+Explanation of all the arguments can be found in the vignette [https://rianneschouten.github.io/mice_ampute/vignette/ampute.html](https://rianneschouten.github.io/mice_ampute/vignette/ampute.html). Today, we will focus on the `patterns` and `mech` argument. 
+
+First, we run the function with the default options. The output of `ampute` is always a `mads` object, and contains all the arguments used in the amputation procedure. We ask for the `pattern` object by `mads$patterns`.
+
+```{r}
+mads <- ampute(data)
+mads$patterns
+```
+
+The amputed data is stored in `mads$amp`. Because we cannot inspect every row in the dataset, we use function `md.pattern` to get a summary of all missing data patterns. Here, it shows that there are three missing data patterns. In each pattern, there is missingness in one variable. Furthermore, apprximately half of the rows are incomplete. This corresponds to the default settings of `ampute`. 
+
+```{r}
+md.pattern(mads$amp)
+```
+
+To influence where the missingness is created, you modify the `patterns` argument. This argument is always a matrix or dataframe where the number of columns equals the number of columns in the data. Each row in the `patterns` matrix is a missing data pattern, and we use `0` for the variables that become incomplete and `1` for the complete variables. 
+
+---
+
+##### Question 1. If we want to create two patterns in our dataset, where one pattern has missingness in `density` and the other pattern has missingness in both `density` and `pH`,  what would the `patterns` object look like? 
+
+```{r eval = FALSE}
+mypatterns <- 
+```
+
+---
+
+```{r}
+mypatterns <- matrix(c(1, 0, 1, 
+                       1, 0, 0), nrow = 2, byrow = TRUE)
+mypatterns
+```
+
+Let's try it.
+
+```{r}
+mads <- ampute(data = data,
+               patterns = mypatterns)
+inc_data <- mads$amp
+md.pattern(inc_data)
+```
+
+The proportion of incomplete rows, and the spreading of the patterns over the incomplete rows can be manipulated with the arguments `prop` and `freq`.
+
+---
+
+##### Question 2. What are possible causes/origins/reasons for missingness? 
+
+---
+
+In missing data theory, we divide missingness into three categories:
+
+*1. Missing Completely At Random (MCAR):* Missingness is not related to any variable. The probability to be missing is fixed.  For instance: Pr(`density` = missing) = 0.5
+
+*2. Missing At Random (MAR):* Missingness is related to one or more observed variables. Then, Pr(`density` = missing) = `pH` or Pr(`density` = missing) = `alcohol` or Pr(`density` = missing) = a combination of the variables `alcohol` and `pH`. The combination is obtained by using the `weights` argument to obtain weighted sum scores.
+
+*3. Missing Not At Random (MNAR):* Missingness is related to the missingness itself or to an unobserved variable. Then, Pr(`density` = missing) = `density` or Pr(`density` = missing) = `?`. 
+
+In `ampute`, the easiest way to create one of these missing data mechanisms is by using the argument `mech`. 
+
+---
+
+##### Question 3. What would the code look like if we create missingness in `density` and create a `"MCAR"` mechanism? 
+
+```{r eval = FALSE}
+mads <- ampute()
+```
+
+---
+
+```{r}
+mads <- ampute(data = data,
+               patterns = c(1, 0, 1),
+               mech = 'MCAR')
+md.pattern(mads$amp)
+```
+
+We are currently in the lucky position of having the original, complete dataset. Therefore, we can check the effect of our missingness on the data. 
+
+```{r}
+MCAR_coefs <- summary(lm(alcohol ~ density, mads$amp))$coefficients
+plotdata["R"] <- !is.na(mads$amp$density)
+
+ggplot(plotdata, aes(density, alcohol, color = R)) +
+  geom_point() +
+  geom_abline(slope = true_coefs[2, 1], 
+              intercept = true_coefs[1, 1],
+              color = 'black') +
+  geom_text(aes(x = 1.003, y = 8.3), 
+            label = 'complete', color = 'black') +
+  geom_abline(slope = MCAR_coefs[2, 1], 
+              intercept = MCAR_coefs[1, 1],
+              color = 'darkblue') +
+  geom_text(aes(x = 1.0045, y = 8.85), 
+            label = 'MCAR', color = 'darkblue') +
+  scale_color_manual(values = c('red', 'darkblue'), 
+                     labels = c('missing', 'observed'))
+```
+
+---
+
+##### Question 4. And what would the code looks like if we want the reason for the missingness to be only in `pH`?
+
+```{r eval = FALSE}
+mads <- ampute()
+```
+
+---
+
+```{r}
+mads <- ampute(data = data,
+               patterns = c(1, 0, 1),
+               weights = c(0, 0, 1))
+inc_data <- mads$amp
+```
+
+```{r}
+MAR_coefs <- summary(lm(alcohol ~ density, inc_data))$coefficients
+plotdata["R"] <- !is.na(inc_data$density)
+
+ggplot(plotdata, aes(density, alcohol, color = R)) +
+  geom_point() +
+  geom_abline(slope = true_coefs[2, 1], 
+              intercept = true_coefs[1, 1],
+              color = 'black') +
+  geom_text(aes(x = 1.003, y = 8.3), 
+            label = 'complete', color = 'black') +
+  geom_abline(slope = MCAR_coefs[2, 1], 
+              intercept = MCAR_coefs[1, 1],
+              color = 'darkblue') +
+  geom_text(aes(x = 1.0045, y = 8.85), 
+            label = 'MCAR', color = 'darkblue') +
+  geom_abline(slope = MAR_coefs[2, 1], 
+              intercept = MAR_coefs[1, 1],
+              color = 'darkblue') +
+  geom_text(aes(x = 1.003, y = 9.4), 
+            label = 'MAR', color = 'darkblue') +
+  scale_color_manual(values = c('red', 'darkblue'), 
+                     labels = c('missing', 'observed'))
+```
+
+What we see, is that overall the lower values of density have become incomplete. We set the reason for the missingness to be in the values of `pH`. When we compare the relationship between `pH` and `density`, you see a negative relation. By default, `ampute` focuses on the `"RIGHT"` side of the distribution. This means, that amputation of `density` on the right side of `pH`, causes lower values of `density` to become incomplete. 
+
+```{r}
+ggplot(plotdata, aes(pH, density, color = R)) +
+  geom_point() + 
+  scale_color_manual(values = c('red', 'darkblue'), 
+                     labels = c('missing', 'observed'))
+```
+
+On which side of the distribution `ampute` should focus, can be manipulated with argument `type`. 
+
+Now, what we also see, is that when we delete the incomplete rows from the dataset, the dataset changes and the regression line also changes. 
+
+```{r}
+true_coefs
+MCAR_coefs
+MAR_coefs
+```
+
+Because of the missingness, bias appears in the estimates. In addition, because we remove all incomplete rows from the dataset, the analyzed dataset becomes smaller and the uncertainty about the estimates becomes larger. Hence, the standard errors increase. 
+
+## 3. Missing data methods
+
+When `lm` executes a regression model on a dataset that contains missing values, it will automatically remove the incomplete rows. This approach is called *listwise deletion*  or *complete case analysis*. As we have seen, the the method of listwise deletion can greatly disturb the validity of the regression coefficient. In case of MAR and MNAR, bias occurs in the coefficient and the standard error becomes larger. 
+
+In the following two exercises, we will try two other missing data methods. The first is a method that is very popular among data scientists: mean imputation. 
+
+---
+
+##### Question 5. Use the code below to mean impute the incomplete data. 
+
+```{r eval = FALSE}
+mean <- ...
+imputations <- rep(...)
+imp_data <- inc_data
+imp_data[...] <- imputations
+```
+
+---
+
+```{r}
+mean <- mean(inc_data$density, na.rm = TRUE)
+imputations <- rep(mean, nrow(inc_data[is.na(inc_data$density), ]))
+imp_data <- inc_data
+imp_data[is.na(inc_data$density), 'density'] <- imputations
+```
+
+---
+
+##### Question 6. What will be the influence on the regression model? 
+
+---
+
+```{r}
+imp_coefs_mean <- summary(lm(alcohol ~ density, imp_data))$coefficients
+imp_data["R"] <- !is.na(inc_data$density)
+
+ggplot(imp_data, aes(density, alcohol, color = R)) +
+  geom_point() +
+  geom_abline(slope = true_coefs[2, 1], 
+              intercept = true_coefs[1, 1],
+              color = 'black') +
+  geom_text(aes(x = 1.003, y = 8.3), 
+            label = 'complete', color = 'black') +
+  geom_abline(slope = MAR_coefs[2, 1], 
+              intercept = MAR_coefs[1, 1],
+              color = 'darkblue') +
+  geom_text(aes(x = 1.003, y = 8.9), 
+            label = 'MAR', color = 'darkblue') +
+  geom_abline(slope = imp_coefs_mean[2, 1], 
+              intercept = imp_coefs_mean[1, 1],
+              color = 'orange') +
+  geom_text(aes(x = 1.003, y = 9.2), 
+            label = 'MEAN', color = 'orange') +
+  scale_color_manual(values = c('orange', 'darkblue'), 
+                     labels = c('imputed', 'observed'))
+```
+
+```{r}
+true_coefs
+imp_coefs_mean
+```
+
+The imputed mean stems from the observed data only. Since the observed data is different from the missing data, the imputed mean will not be a good representation of the data. Hence, the bias in the beta coefficient is not gone. Although the dataset is back to 1600 rows, the standard error is still larger than the true standard error. This is because the extra 800 rows do not add extra information. 
+
+---
+
+##### Question 7. What happens if we use the observed information in `pH`? 
+
+````{r eval = FALSE}
+imp_model <- 
+imp_coefs <- 
+imputations <- inc_data[] * imp_coefs[2, 1] + imp_coefs[1, 1]
+imp_data <- inc_data
+imp_data[] <- imputations
+```
+
+---
+
+```{r}
+imp_model <- lm(density ~ pH, inc_data)
+imp_coefs <- summary(imp_model)$coefficients
+imputations <- inc_data[is.na(inc_data$density), 'pH'] * imp_coefs[2, 1] + imp_coefs[1, 1]
+imp_data <- inc_data
+imp_data[is.na(inc_data$density), 'density'] <- imputations
+```
+
+```{r}
+plotdata <- imp_data
+plotdata["R"] <- !is.na(inc_data$density)
+
+ggplot(plotdata, aes(pH, density, color = R)) +
+  geom_point() +
+  scale_color_manual(values = c('orange', 'darkblue'), 
+                     labels = c('imputed', 'observed'))
+
+```
+
+```{r}
+md.pattern(imp_data)
+```
+
+```{r}
+imp_coefs_reg <- summary(lm(alcohol ~ density, imp_data))$coefficients
+imp_data["R"] <- !is.na(inc_data$density)
+
+ggplot(imp_data, aes(density, alcohol, color = R)) +
+  geom_point() +
+  geom_abline(slope = true_coefs[2, 1], 
+              intercept = true_coefs[1, 1],
+              color = 'black') +
+  geom_text(aes(x = 1.003, y = 8.3), 
+            label = 'complete', color = 'black') +
+  geom_abline(slope = MAR_coefs[2, 1], 
+              intercept = MAR_coefs[1, 1],
+              color = 'darkblue') +
+  geom_text(aes(x = 1.003, y = 9.2), 
+            label = 'MAR', color = 'darkblue') +
+  geom_abline(slope = imp_coefs_reg[2, 1], 
+              intercept = imp_coefs_reg[1, 1],
+              color = 'orange') +
+  geom_text(aes(x = 1.003, y = 8.9), 
+            label = 'REG', color = 'orange') +
+  scale_color_manual(values = c('orange', 'darkblue'), 
+                     labels = c('imputed', 'observed'))
+```
+
+```{r}
+true_coefs
+MAR_coefs
+imp_coefs_reg
+```
+
+The methods we have covered so far are called *single imputation methods*. There is also *multiple imputation*. In fact, package **mice** is developed especially to make multiple imputation fast and easy. 
+
+In short, multiple imputation imputes every missing value *m* times. This results in *m* datasets, where the observed data is similar in every dataset, and the imputed data different. The analysis of interest is performed on each of the *m* datasets, and the output is pooled with Rubin's pooling rules. 
+
+Multiple imputation is known to give unbiased results for a wide amount of statistical analyses, as well as an honest standard error. That means, the standard error does justice to the uncertainty in the data due to missing data. 
+
+In sum, imputing with `mice` takes 3 steps. 
+
+1. You define the imputation method used for estimating the missing values.
+2. You apply the statistical analyis of interest to each of the imputed datasets.
+3. You pool the results to one final outcome.
+
+For instance:
+
+```{r eval = FALSE}
+imps <- mice(inc_data, m = 10, method = 'norm') 
+fit <- with(imps, lm(alcohol ~ density))
+out <- summary(pool(fit))
+```
+
+## 4. Evaluation
+
+It is not wise to compare an imputed dataset with an amputed dataset only once. The result could be greatly influenced by sampling error. If you want to set up a simulation study, reading Brand, 2003 might be a good start. He explains two ways to compare the imputed dataset with the complete dataset. 
+
+Furthermore, there are other evaluation measures to think of when you compare the imputed dataset with the truth. A data scientist, for instance, might be more interested in the prediction error. The difference between evaluating bias and standard errors on the one hand, and evaluation prediction error measures on the other hand, is still unclear. More research on that has to be done. 
+
+## Summary
+
+Beforehand, I specified 3 takeaways. 
+
+1. Missing data happens with different underlying mechanisms
+
+MCAR, MAR and MNAR. 
+
+2. Simple R-functions like 'md.pattern' and 'ampute' help to investigate the missingness
+
+Missingness could occur in different variables. With `ampute`, you can recreate these patterns. With `md.pattern`, you can inspect the patterns and understand more about the relation between the complete and incomplete data. 
+
+3. The appropriateness of a missing data method depends on the missing data problem
+
+The larger the impact of the missing data on the analysis, the stronger the imputation method should be. Listwise deletion is not a strong method, and mean imputation only works when the mean value is the statistic of interest and the mechanism is MCAR missingness. 
+
+For regression analysis with MAR missingness, regression imputation might be sufficient. To be sure the standard error is account for properly, multiple imputation is the best way to go. 
+
+## Contact details
+
+Do not hestitate to ask question by email.
+My contact details are on [rianneschouten.github.io](rianneschouten.github.io)
+Also, follow me on twitter:
+
+![](missdata.png)
+
+
+
+
+
+
+

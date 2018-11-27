@@ -1,0 +1,355 @@
+---
+title: Generating missing values with `ampute`
+subtitle: And why on earth you would do that
+author: |
+  | Rianne Schouten
+institute: |
+  | 1. PhD Candidate, Utrecht University
+  | 2. Developer Data & Analytics, Samen Veilig Midden-Nederland 
+date: "September 1, 2018"
+fontsize: 10pt
+output:
+  beamer_presentation: default
+  theme: "default"
+  colortheme: "beaver"
+  toc: true
+header-includes:
+  - \usepackage{caption}
+  - \usepackage{amsmath}
+  - \usepackage{blkarray}
+---
+
+# Why on earth would you ampute?
+
+For simulation purposes: 
+
+1. Generate complete data (or use real dataset)
+2. Generate missing values in complete data
+3. Apply missing data method
+4. Perform analysis and compare with complete data
+
+But also for:
+
+- Planned missing data survey designs
+- Investigating measurement errors
+- Reproducing your missing data situation
+
+# Missing data in your dataset 
+
+```{r, include = FALSE}
+require(mice)
+require(lattice)
+require(MASS)
+require(Matrix)
+
+sigma <- nearPD(matrix(c(1, 0.5, 0.3, 
+                         0.5, 1, 0.5,
+                         0.3, 0.5, 1), 3, 3))$mat
+set.seed(1234)
+data <- mvrnorm(mu = c(0, 0, 0), 
+                Sigma = sigma, 
+                n = 1000)
+data <- as.data.frame(data)
+names(data) <- c("Income", "WorkingYears", "Age")
+amp <- ampute(data, patterns =  matrix(c(1, 0, 1, 
+                                         0, 0, 1), nrow = 2, byrow = TRUE), 
+              prop = 0.8, mech = "MAR")
+inc_data <- amp$amp
+
+#data <- mvrnorm(mu = c(0, 0), 
+#                Sigma = matrix(c(1, 0.7, 0.7, 1), 2, 2), 
+#                n = 1000)
+#data <- as.data.frame(data)
+#names(data) <- c("income", "age")
+#inc_data <- ampute(data, pat = c(0, 1), prop = 0.7, mech = "MCAR")$amp
+```
+
+```{r}
+head(inc_data)
+require(mice)
+md.pattern(inc_data)
+```
+
+# Generation of missing values
+
+\begin{columns}
+
+\begin{column}{0.3\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[height=60mm]{SUA_1.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Generation of missing values 
+
+\begin{columns}
+
+\begin{column}{0.3\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\item $Y_2$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[height=60mm]{SUA_2.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Generation of missing values 
+
+\begin{columns}
+
+\begin{column}{0.3\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\item $Y_2$
+\item $\dots$
+\item $Y_l$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[height=60mm]{SUA.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Multivariate amputation with `ampute` 
+
+\begin{figure}
+  \includegraphics[height=60mm]{Scheme_large.pdf}
+\end{figure}
+
+# Multivariate Amputation with `ampute` 
+
+Explanation of the method:
+
+[Rianne Margaretha Schouten, Peter Lugtig & Gerko Vink (2018) Generating missing values for simulation purposes: a multivariate amputation procedure, Journal of Statistical Computation and Simulation, 88:15, 2909-2930, DOI: 10.1080/00949655.2018.1491577](https://www.tandfonline.com/doi/full/10.1080/00949655.2018.1491577)
+
+# Multivariate amputation with `ampute`
+
+```{r}
+amp <- ampute(data, 
+              patterns =  matrix(c(1, 0, 1,
+                                   1, 0, 0, 
+                                   0, 0, 1), 
+                nrow = 3, byrow = TRUE),
+              freq = c(0.6, 0.2, 0.2),
+              prop = 0.5, 
+              mech = "MAR")
+md.pattern(amp$amp)
+```
+
+# Multivariate amputation with `ampute`
+
+```{r, eval = FALSE}
+require(mice)
+?ampute
+```
+
+`
+ampute(data, prop = 0.5, patterns = NULL, freq = NULL, mech = "MAR", weights = NULL, cont = TRUE, type = NULL, odds = NULL, bycases = TRUE, run = TRUE)
+`
+
+\vspace{5mm}
+Explanation of all the arguments in vignette: 
+
+[https://rianneschouten.github.io/mice_ampute/vignette/ampute.html](https://rianneschouten.github.io/mice_ampute/vignette/ampute.html)
+
+# Missing data mechanisms
+
+Missing Completely At Random (MCAR):
+
+Missingness is not related to any variable
+
+Pr(Income = missing) = 0.5
+
+\vspace{5mm}
+Missing At Random (MAR):
+
+Missingness is related to an observed variable
+
+Pr(Income = missing) = Age
+
+\vspace{5mm}
+Missing Not At Random (MNAR):
+
+Missingness is related to the missingness itself or to an unobserved variable
+
+Pr(Income = missing) = Income
+
+# Missing data mechanisms: Missing Completely At Random
+
+\begin{figure}
+\centering
+  \includegraphics[width=110mm]{MCAR.pdf}
+\end{figure}
+
+# Missing data mechanisms: Missing At Random
+
+\begin{figure}
+\centering
+  \includegraphics[width=110mm]{MAR.pdf}
+\end{figure}
+
+# Missing data mechanisms: Missing Not At Random
+
+\begin{figure}
+\centering
+  \includegraphics[width=110mm]{MNAR.pdf}
+\end{figure}
+
+# Multivariate amputation with `ampute`
+
+```{r, eval = FALSE}
+require(mice)
+?ampute
+```
+
+`
+ampute(data, prop = 0.5, patterns = NULL, freq = NULL, mech = "MAR", weights = NULL, cont = TRUE, type = NULL, odds = NULL, bycases = TRUE, run = TRUE)
+`
+
+\vspace{5mm}
+Explanation of all the arguments in vignette: 
+
+[https://rianneschouten.github.io/mice_ampute/vignette/ampute.html](https://rianneschouten.github.io/mice_ampute/vignette/ampute.html)
+
+# Contact information
+
+Rianne Schouten: r.m.schouten\@uu.nl
+
+Follow my work: [rianneschouten.github.io](https://rianneschouten.github.io/)
+
+\vspace{1cm}
+\begin{figure}
+\includegraphics[width=3cm]{uu_logo}\hspace*{2mm}
+\includegraphics[width=3cm]{logo_samenveilig}
+\end{figure}
+
+# Missingness types
+
+\begin{figure}
+\includegraphics{types.pdf}
+\end{figure}
+
+# Multivariate Amputation: Weighted sum scores
+
+\begin{itemize}
+\item Missing values in multiple variables
+\end{itemize}
+\begin{equation*}
+\begin{blockarray}{cccc}
+& Y_1 & Y_2 & Y_3\\
+\begin{block}{c[ccc]}
+P_1&0&0&1\\
+P_2&0&1&1\\
+\end{block}
+\end{blockarray}
+\end{equation*}
+\vspace{-5mm}
+\begin{itemize}
+\item Based on multiple variables \\
+$wss_i = w_{1,1} \cdot y_{1i} + w_{1,2} \cdot y_{2i} + w_{1,3} \cdot x_{i} \hspace{2mm} \text{if case $i$ is in pattern 1}$
+\end{itemize}
+\vspace{2mm}
+\begin{equation*}
+\begin{blockarray}{cccc}
+& Y_1 & Y_2 & Y_3\\
+\begin{block}{c[ccc]}
+W_1&0&0&1\\
+W_2&0&1&5\\
+\end{block}
+\end{blockarray}
+\end{equation*}
+
+# Missing data methods
+
+```{r, include = FALSE}
+colors <- c("darkblue", "#b30000")
+theme <- list(superpose.symbol = list(col = colors[1:2], pch = 19, cex = 1),
+              plot.symbol = list(col = colors[1:2], pch = 1),
+              strip.background = list(col = "grey95"))
+key <- list(columns = 2, points = list(col = colors[1:2], pch = 19), 
+            text = list(c("Observed", "Missing on Income")))
+
+inc_data <- ampute(data, pat = c(0, 1, 1), prop = 0.3, mech = "MNAR")$amp
+plot_data <- data[, c(1,3)]
+plot_data['R'] <- is.na(inc_data$Income)
+plot <- xyplot(Income ~ Age, data = plot_data, 
+               groups = R, outer = TRUE, par.settings = theme, 
+               ylab = 'Income', xlab = 'Age',
+               key = key, ylim = c(-3, 3), xlim = c(-3, 3))
+```
+
+```{r, echo = FALSE, fig.width = 10, fig.heigth = 5}
+plot
+```
+
+# Mean imputation
+
+```{r, include = FALSE}
+com_data <- inc_data
+com_data[is.na(inc_data$Income), 'Income'] <- 
+  mean(inc_data$Income, na.rm = TRUE)
+```
+
+```{r, include = FALSE}
+key <- list(columns = 2, points = list(col = colors[1:2], pch = 19), 
+            text = list(c("Complete", "Imputed")))
+com_data['R'] <- is.na(inc_data$Income)
+plot <- xyplot(Income ~ Age, data = com_data, 
+               groups = R, outer = TRUE, par.settings = theme, 
+               ylab = 'Income', xlab = 'Age',
+               key = key, ylim = c(-3, 3), xlim = c(-3, 3))
+```
+
+```{r, echo = FALSE, fig.width = 10, fig.heigth = 5}
+plot
+```
+
+# Regression imputation
+
+```{r, include = FALSE}
+fit <- lm(Income ~ Age, data = inc_data)
+pred <- predict(fit, newdata = ic(inc_data))
+com_data <- inc_data
+com_data[is.na(inc_data$Income), 'Income'] <- pred
+```
+
+```{r, include = FALSE}
+com_data['R'] <- is.na(inc_data$Income)
+plot <- xyplot(Income ~ Age, data = com_data, 
+               groups = R, outer = TRUE, par.settings = theme, 
+               ylab = 'Income', xlab = 'Age',
+               key = key, ylim = c(-3, 3), xlim = c(-3, 3))
+```
+
+```{r, echo = FALSE, fig.width = 10, fig.heigth = 5}
+plot
+```
+
+
+
+
+
+
+
+
+
+
+

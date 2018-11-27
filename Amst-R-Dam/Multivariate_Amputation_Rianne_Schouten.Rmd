@@ -1,0 +1,393 @@
+---
+title: "Generating missing values with `ampute`"
+author: |
+  | Rianne Schouten
+institute: |
+  | 1. Department of Methodology and Statistics, University Utrecht
+  | 2. DPA Professionals Data Science Excellence Program
+date: "May 18, 2017"
+output:
+  beamer_presentation: 
+    includes:
+      in_header: preamble.tex
+    theme: default
+    colortheme: "beaver"
+---
+
+# Overview
+
+```{r, include = FALSE}
+require(mice)
+require(lattice)
+require(MASS)
+```
+
+- What is amputation?
+- Characteristics of missing data problems
+- Stepwise Univariate Amputation
+- Multivariate Amputation
+
+```{r, eval = FALSE}
+require(mice)
+?ampute
+```
+
+# What is amputation?
+
+Amputation is the generation of missing values in complete data 
+
+\vspace{5mm}
+Evaluation of a missing data methodology:
+\begin{itemize}
+\item Simulate complete data set
+\item Generate missing values
+\item Deal with missing data with new method
+\item Compare statistical inferences between the original, complete data set and after dealing with the missing values
+\end{itemize}
+
+# Characteristics of missing data problems
+
+\begin{align*}
+\text{MCAR} &: \text{Missingness is not related to X or Y at all} \\
+\text{MAR} &: \text{Missingness is related to X but not to Y} \\
+\text{MNAR} &: \text{Missingness is related to Y}\\
+\\
+\text{MCAR} &: Pr(Y = missing) = 0.5\\
+\text{MAR} &: logit(Pr(Y = missing)) = X \\
+\text{MNAR} &: logit(Pr(Y = missing)) = Y\\
+\end{align*} 
+
+# Characteristics of missing data problems
+
+- Mechanism
+- Proportion
+- Severity
+- Which variables
+- Influence of observed data
+- Combinations
+
+# Stepwise Univariate Amputation
+
+\begin{columns}
+
+\begin{column}{0.5\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[width=100mm, height=60mm]{SUA_1.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Stepwise Univariate Amputation
+
+\begin{columns}
+
+\begin{column}{0.5\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\item $Y_2$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[width=100mm, height=60mm]{SUA_2.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Stepwise Univariate Amputation
+
+\begin{columns}
+
+\begin{column}{0.5\textwidth}
+\begin{enumerate}
+\item $Y_1$
+\item $Y_2$
+\item $\dots$
+\item $Y_l$
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{figure}
+  \includegraphics[width=100mm, height=60mm]{SUA.pdf}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+# Multivariate Amputation
+
+\begin{figure}
+\includegraphics[width=115mm, height=63mm]{Scheme_large.pdf}
+\end{figure}
+
+# Multivariate Amputation: Missing data patterns
+
+A missing data pattern is a specific combination of variables with missing values and variables without missing values. 
+
+`0`: incomplete variable
+
+`1`: complete variable
+
+# Multivariate Amputation: Missing data patterns
+
+```{r}
+data <- mvrnorm(mu = c(5, 5, 10), 
+                Sigma = matrix(c(1, 0.5, 0.5, 
+                                 0.5, 1, 0.5,
+                                 0.5, 0.5, 1), 3, 3), 
+                n = 1000)
+data <- as.data.frame(data)
+names(data) <- c("y1", "y2", "x")
+head(data)
+```
+
+# Multivariate Amputation: Missing data patterns
+
+```{r}
+mypat <- matrix(c(0, 0, 1,
+                  0, 1, 1), 
+                2, 3, byrow = TRUE)
+amp <- ampute(data, patterns = mypat)
+inc_data <- amp$amp
+```
+
+# Multivariate Amputation: Missing data patterns
+
+```{r}
+inc_data[1:12, ]
+```
+
+# Multivariate Amputation: Proportion and Frequency
+
+```{r}
+amp$prop
+amp$freq
+```
+
+# Multivariate Amputation: Proportion and Frequency
+
+\begin{figure}
+\includegraphics[width=115mm, height=63mm]{Scheme_large.pdf}
+\end{figure}
+
+# Multivariate Amputation: Proportion and Frequency
+
+```{r}
+myprop <- 0.8
+myfreq <- c(0.8, 0.2)
+amp <- ampute(data, patterns = mypat, 
+              prop = myprop, freq = myfreq)
+md.pattern(amp$amp)
+```
+
+# Multivariate Amputation
+
+`
+ampute(data, prop = 0.5, patterns = NULL, freq = NULL, mech = "MAR", weights = NULL, cont = TRUE, type = NULL, odds = NULL, bycases = TRUE, run = TRUE)
+`
+
+```{r}
+amp$patterns
+```
+
+# Multivariate Amputation: Distribution functions
+
+\begin{figure}
+  \includegraphics[width=100mm, height=60mm]{types.pdf}
+\end{figure}
+
+```{r}
+amp$type
+```
+
+# Multivariate Amputation: Weighted sum scores
+
+\begin{itemize}
+\item Missing values in multiple variables
+\end{itemize}
+\begin{equation*}
+\begin{blockarray}{cccc}
+& Y_1 & Y_2 & X\\
+\begin{block}{c[ccc]}
+P_1&0&0&1\\
+P_2&0&1&1\\
+\end{block}
+\end{blockarray}
+\end{equation*}
+\vspace{-5mm}
+\begin{itemize}
+\item Based on multiple variables \\
+$wss_i = w_{1,1} \cdot y_{1i} + w_{1,2} \cdot y_{2i} + w_{1,3} \cdot x_{i} \hspace{2mm} \text{if case $i$ is in pattern 1}$
+\end{itemize}
+\vspace{2mm}
+\begin{equation*}
+\begin{blockarray}{cccc}
+& Y_1 & Y_2 & X\\
+\begin{block}{c[ccc]}
+W_1&1&5&0\\
+W_2&0&0&1\\
+\end{block}
+\end{blockarray}
+\end{equation*}
+
+# Multivariate Amputation: Weighted sum scores
+
+```{r}
+myweights <- matrix(c(1, 5, 0,
+                      0, 0, 1), 
+                    2, 3, byrow = TRUE)
+
+amp <- ampute(data, patterns =  mypat,
+              prop = myprop, freq = myfreq,
+              weights = myweights,
+              type = c("LEFT", "MID"))
+```
+
+# Multivariate Amputation
+
+```{r, echo = FALSE}
+bwplot(amp, which.pat = 1, descriptives = FALSE)
+```
+
+# Multivariate Amputation
+
+```{r, echo = FALSE}
+bwplot(amp, which.pat = 2, descriptives = FALSE)
+```
+
+# Multivariate Amputation
+
+- Mechanism
+- Proportion
+- Severity
+- Which variables
+- Influence of observed data
+- Combinations
+
+`
+ampute(data, prop = 0.5, patterns = NULL, freq = NULL, mech = "MAR", weights = NULL, cont = TRUE, type = NULL, odds = NULL, bycases = TRUE, run = TRUE)
+`
+
+# Documentation
+
+Rianne Schouten, Peter Lugtig, Jaap Brand, Gerko Vink (2017) Generate missing values with `ampute`, available from: https://github.com/RianneSchouten/Amputation_with_Ampute/tree/master/Manuscript%20article
+
+Rianne Schouten, Peter Lugtig, Gerko Vink (2017) Generating missing values for simulation purposes: A multivariate amputation procedure. Under review. Available from: https://github.com/RianneSchouten/mice/tree/master/vignettes
+
+```{r, eval = FALSE}
+require(mice)
+?ampute
+```
+
+# Additional slides
+
+\begin{figure}
+  \includegraphics[width=100mm, height=60mm]{types_shifted.pdf}
+\end{figure}
+
+# Additional slides
+
+\begin{figure}
+  \includegraphics[width=100mm, height=60mm]{Table.pdf}
+\end{figure}
+
+# Characteristics of missing data problems
+
+```{r, include = FALSE}
+colors <- c("black", "#fc8d62")
+theme <- list(superpose.symbol = list(col = colors, pch = 19, cex = 1),
+              plot.symbol = list(col = colors, pch = 1),
+              strip.background = list(col = "grey95"))
+key <- list(columns = 2, points = list(col = colors, pch = 19), 
+            text = list(c("Complete", "Incomplete")))
+plotdata <- xyplot(y1 ~ x, data = data, col = "black", ylim = c(2, 8),
+                   xlim = c(7, 13), pch = 19)
+```
+
+```{r, echo = FALSE, fig.width = 10, fig.heigth = 5}
+plotdata
+```
+
+# Characteristics of missing data problems: MCAR
+
+```{r}
+mcar_data <- ampute(data, pat = c(0, 1, 1), 
+                    mech = "MCAR")$amp
+```
+
+# Characteristics of missing data problems: MCAR
+
+```{r, include = FALSE}
+mis_data <- data
+mis_data["R"] <- is.na(mcar_data$y1)
+mcar <- xyplot(y1 ~ x, data = mis_data, 
+               groups = R, outer = TRUE, par.settings = theme,
+               key = key, ylim = c(2, 8), xlim = c(7, 13))
+```
+
+```{r, echo = FALSE, fig.width = 10, fig.heigth = 5}
+mcar
+```
+
+# Characteristics of missing data problems: MAR
+
+```{r}
+mar_data <- ampute(data, pat = c(0, 1, 1), 
+                   weights = c(0, 0, 1), 
+                   mech = "MAR")$amp
+```
+
+# Characteristics of missing data problems: MAR
+
+```{r, include = FALSE}
+mis_data["R"] <- is.na(mar_data$y1)
+mar <- xyplot(y1 ~ x, data = mis_data, 
+              groups = R, par.settings = theme,
+              key = key, ylim = c(2, 8), xlim = c(7, 13))
+```
+
+```{r, echo = FALSE, fig.width = 10, fig.heigth = 5}
+mar
+```
+
+# Characteristics of missing data problems: MNAR
+
+```{r}
+mnar_data <- ampute(data, pat = c(0, 1, 1), 
+                    weights = c(1, 0, 0), 
+                    mech = "MNAR")$amp
+```
+
+# Characteristics of missing data problems: MNAR
+
+```{r, include = FALSE}
+mis_data["R"] <- is.na(mnar_data$y1)
+mnar <- xyplot(y1 ~ x, data = mis_data, 
+               groups = R, par.settings = theme,
+               key = key, ylim = c(2, 8), xlim = c(7, 13))
+```
+
+```{r, echo = FALSE, fig.width = 10, fig.heigth = 5}
+mnar
+```
+
+# Documentation
+
+Rianne Schouten, Peter Lugtig, Jaap Brand, Gerko Vink (2017) Generate missing values with `ampute`, available from: https://github.com/RianneSchouten/Amputation_with_Ampute/tree/master/Manuscript%20article
+
+Rianne Schouten, Peter Lugtig, Gerko Vink (2017) Generating missing values for simulation purposes: A multivariate amputation procedure. Under review. Available from: https://github.com/RianneSchouten/mice/tree/master/vignettes
+
+```{r, eval = FALSE}
+require(mice)
+?ampute
+```
