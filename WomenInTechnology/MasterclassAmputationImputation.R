@@ -17,7 +17,8 @@ library(ggplot2)
 set.seed(111)
 
 # Complete data
-data <- read.csv("red_wine_quality.txt", sep = '\t')
+data <- read.csv("red_wine_quality.txt", 
+                 sep = '\t')
 data <- data[, c('alcohol', 'density', 'pH')]
 nrow(data)
 summary(data)
@@ -28,7 +29,8 @@ ggplot(plotdata, aes(density, alcohol)) +
   geom_point()
 
 # Define truth
-truemodel <- glm(alcohol ~ density, family = 'gaussian', data)
+truemodel <- glm(alcohol ~ density, 
+                 family = 'gaussian', data)
 true_coefs <- summary(truemodel)$coefficients
 true_coefs
 
@@ -43,61 +45,52 @@ ggplot(plotdata, aes(density, alcohol)) +
 # Amputation
 ?ampute
 mads <- ampute(data)
+summary(mads)
 mads$patterns
 md.pattern(mads$amp)
 
 ### Question 1 ###
 mypatterns <- 
 
-mads <- ampute(data = data,
-                 patterns = mypatterns)
+mads <- ampute()
 inc_data <- mads$amp
 md.pattern(inc_data)
 
 ### Question 2 ###
 
 ### Question 3 ###
-mads <- ampute()
-
-MCAR_coefs <- summary(lm(alcohol ~ density, mads$amp))$coefficients
-plotdata["R"] <- !is.na(mads$amp$density)
-
-ggplot(plotdata, aes(density, alcohol, color = R)) +
-  geom_point() +
-  geom_abline(slope = true_coefs[2, 1], 
-              intercept = true_coefs[1, 1],
-              color = 'black') +
-  geom_text(aes(x = 1.003, y = 8.3), 
-            label = 'complete', color = 'black') +
-  geom_abline(slope = MCAR_coefs[2, 1], 
-              intercept = MCAR_coefs[1, 1],
-              color = 'darkblue') +
-  geom_text(aes(x = 1.0045, y = 8.85), 
-            label = 'MCAR', color = 'darkblue') +
-  scale_color_manual(values = c('red', 'darkblue'), 
-                     labels = c('missing', 'observed'))
+mads$mech
+mads$weights
+mads$patterns
 
 ### Question 4 ###
-mads <- ampute()
+mypatterns <- c(1, 0, 1)
+myweights <- c(0, 0, 1)
+mads <- ampute(data,
+               patterns = mypatterns,
+               weights =  myweights)
 
 inc_data <- mads$amp
 md.pattern(inc_data)
 
-MAR_coefs <- summary(lm(alcohol ~ density, inc_data))$coefficients
 plotdata["R"] <- !is.na(inc_data$density)
+ggplot(plotdata, aes(pH, density, color = R)) +
+  geom_point() + 
+  scale_color_manual(
+    values = c('red', 'darkblue'), 
+    labels = c('missing', 'observed'))
 
-ggplot(plotdata, aes(density, alcohol, color = R)) +
+MAR_coefs <- summary(lm(alcohol ~ density, 
+                        inc_data))$coefficients
+
+ggplot(plotdata, aes(density, alcohol, 
+                     color = R)) +
   geom_point() +
+  geom_text(aes(x = 1.003, y = 8.3), 
+            label = 'complete', color = 'black') +
   geom_abline(slope = true_coefs[2, 1], 
               intercept = true_coefs[1, 1],
               color = 'black') +
-  geom_text(aes(x = 1.003, y = 8.3), 
-            label = 'complete', color = 'black') +
-  geom_abline(slope = MCAR_coefs[2, 1], 
-              intercept = MCAR_coefs[1, 1],
-              color = 'darkblue') +
-  geom_text(aes(x = 1.0045, y = 8.85), 
-            label = 'MCAR', color = 'darkblue') +
   geom_abline(slope = MAR_coefs[2, 1], 
               intercept = MAR_coefs[1, 1],
               color = 'darkblue') +
@@ -106,27 +99,18 @@ ggplot(plotdata, aes(density, alcohol, color = R)) +
   scale_color_manual(values = c('red', 'darkblue'), 
                      labels = c('missing', 'observed'))
 
-ggplot(plotdata, aes(pH, density, color = R)) +
-  geom_point() + 
-  scale_color_manual(values = c('red', 'darkblue'), 
-                     labels = c('missing', 'observed'))
-
-mads$type
-
 true_coefs
-MCAR_coefs
 MAR_coefs
 
-### Missing data methods
+# Missing data methods
 
-# Question 5.
-
-mean <- ...
+### Question 5. ###
+mean_density <- ...
 imputations <- rep(...)
 imp_data <- inc_data
 imp_data[...] <- imputations
 
-# Question 6. 
+md.pattern(imp_data)
 
 imp_coefs_mean <- summary(lm(alcohol ~ density, imp_data))$coefficients
 imp_data["R"] <- !is.na(inc_data$density)
@@ -151,16 +135,17 @@ ggplot(imp_data, aes(density, alcohol, color = R)) +
   scale_color_manual(values = c('orange', 'darkblue'), 
                      labels = c('imputed', 'observed'))
 
-true_coefs
-imp_coefs_mean
+### Question 6. ###
 
-# Question 7.
-
-imp_model <- 
-imp_coefs <- 
-imputations <- inc_data[] * imp_coefs[2, 1] + imp_coefs[1, 1]
+imp_model <- lm(density ~ pH, inc_data)
+imp_coefs <- summary(imp_model)$coefficients
+imputations <- 
+  inc_data[is.na(inc_data$density), 'pH'] * imp_coefs[2, 1] + imp_coefs[1, 1]
 imp_data <- inc_data
-imp_data[] <- imputations
+imp_data[is.na(inc_data$density), 'density'] <- 
+  imputations
+
+md.pattern(imp_data)
 
 plotdata <- imp_data
 plotdata["R"] <- !is.na(inc_data$density)
@@ -195,15 +180,15 @@ ggplot(imp_data, aes(density, alcohol, color = R)) +
   scale_color_manual(values = c('orange', 'darkblue'), 
                      labels = c('imputed', 'observed'))
 
-true_coefs
-MAR_coefs
-imp_coefs_reg
-
 # Multiple imputation
 
-imps <- mice(inc_data, m = 10, method = 'norm') 
+imps <- mice(inc_data, m = 5, method = 'norm') 
 fit <- with(imps, lm(alcohol ~ density))
-out <- summary(pool(fit))
+imp_coefs_mi <- summary(pool(fit))
+
+true_coefs
+imp_coefs_reg
+imp_coefs_mi
 
 ### End of the masterclass ###
 ### Do not hestitate to ask question by email ###

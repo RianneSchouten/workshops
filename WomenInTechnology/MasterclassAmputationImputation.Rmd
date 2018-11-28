@@ -187,17 +187,14 @@ To influence where the missingness is created, you modify the `patterns` argumen
 
 ---
 
-##### Question 1. If we want to create two patterns in our dataset, where one pattern has missingness in `density` and the other pattern has missingness in both `density` and `pH`,  what would the `patterns` object look like? 
-
-```{r eval = FALSE}
-mypatterns <- 
-```
+##### If we want to create two patterns in our dataset, where one pattern has missingness in `density` and the other pattern has missingness in both `density` and `pH`,  what would the `patterns` object look like? 
 
 ---
 
 ```{r}
 mypatterns <- matrix(c(1, 0, 1, 
-                       1, 0, 0), nrow = 2, byrow = TRUE)
+                       1, 0, 0), 
+                     nrow = 2, byrow = TRUE)
 mypatterns
 ```
 
@@ -214,7 +211,7 @@ The proportion of incomplete rows, and the spreading of the patterns over the in
 
 ---
 
-##### Question 2. What are possible causes/origins/reasons for missingness? 
+##### What are possible causes/origins/reasons for missingness? 
 
 ---
 
@@ -233,50 +230,21 @@ In `ampute`, the easiest way to create one of these missing data mechanisms is b
 
 ---
 
-##### Question 3. What would the code look like if we create missingness in `density` and create a `"MCAR"` mechanism? 
+##### What is the default in `ampute`?
 
-```{r eval = FALSE}
-mads <- ampute()
+--- 
+
+```{r}
+mads$mech
+mads$weights
+mads$patterns
 ```
+
+By default, `ampute` generates `"MAR"` missingness. The function automatically changes the mechanism into the right weights. Instead of using the argument `mech`, you could also use the argument `weights` directly. 
 
 ---
 
-```{r}
-mads <- ampute(data = data,
-               patterns = c(1, 0, 1),
-               mech = 'MCAR')
-md.pattern(mads$amp)
-```
-
-We are currently in the lucky position of having the original, complete dataset. Therefore, we can check the effect of our missingness on the data. 
-
-```{r}
-MCAR_coefs <- summary(lm(alcohol ~ density, mads$amp))$coefficients
-plotdata["R"] <- !is.na(mads$amp$density)
-
-ggplot(plotdata, aes(density, alcohol, color = R)) +
-  geom_point() +
-  geom_abline(slope = true_coefs[2, 1], 
-              intercept = true_coefs[1, 1],
-              color = 'black') +
-  geom_text(aes(x = 1.003, y = 8.3), 
-            label = 'complete', color = 'black') +
-  geom_abline(slope = MCAR_coefs[2, 1], 
-              intercept = MCAR_coefs[1, 1],
-              color = 'darkblue') +
-  geom_text(aes(x = 1.0045, y = 8.85), 
-            label = 'MCAR', color = 'darkblue') +
-  scale_color_manual(values = c('red', 'darkblue'), 
-                     labels = c('missing', 'observed'))
-```
-
----
-
-##### Question 4. And what would the code looks like if we want the reason for the missingness to be only in `pH`?
-
-```{r eval = FALSE}
-mads <- ampute()
-```
+##### What would the code look like if we create missingness in `density` and want the reason for the missingness to be in `pH`?
 
 ---
 
@@ -285,24 +253,33 @@ mads <- ampute(data = data,
                patterns = c(1, 0, 1),
                weights = c(0, 0, 1))
 inc_data <- mads$amp
+md.pattern(inc_data)
 ```
 
-```{r}
-MAR_coefs <- summary(lm(alcohol ~ density, inc_data))$coefficients
-plotdata["R"] <- !is.na(inc_data$density)
+We are currently in the lucky position of having the original, complete dataset. What did we actually do?
 
-ggplot(plotdata, aes(density, alcohol, color = R)) +
+```{r}
+plotdata["R"] <- !is.na(inc_data$density)
+ggplot(plotdata, aes(pH, density, color = R)) +
+  geom_point() + 
+  scale_color_manual(values = c('red', 'darkblue'), 
+                     labels = c('missing', 'observed'))
+```
+
+What we see, is that overall the higher values of `pH` have becomes missing. Due to the negative relation between `density` and `pH`, this means the low values of `density` have become incomplete. We can see this effect as well when we model the regression line on the incomplete dataset.
+
+```{r}
+MAR_coefs <- summary(lm(alcohol ~ density, 
+                        inc_data))$coefficients
+
+ggplot(plotdata, aes(density, alcohol, 
+                     color = R)) +
   geom_point() +
+  geom_text(aes(x = 1.003, y = 8.3), 
+            label = 'complete', color = 'black') +
   geom_abline(slope = true_coefs[2, 1], 
               intercept = true_coefs[1, 1],
               color = 'black') +
-  geom_text(aes(x = 1.003, y = 8.3), 
-            label = 'complete', color = 'black') +
-  geom_abline(slope = MCAR_coefs[2, 1], 
-              intercept = MCAR_coefs[1, 1],
-              color = 'darkblue') +
-  geom_text(aes(x = 1.0045, y = 8.85), 
-            label = 'MCAR', color = 'darkblue') +
   geom_abline(slope = MAR_coefs[2, 1], 
               intercept = MAR_coefs[1, 1],
               color = 'darkblue') +
@@ -312,26 +289,10 @@ ggplot(plotdata, aes(density, alcohol, color = R)) +
                      labels = c('missing', 'observed'))
 ```
 
-What we see, is that overall the lower values of density have become incomplete. We set the reason for the missingness to be in the values of `pH`. When we compare the relationship between `pH` and `density`, you see a negative relation. By default, `ampute` focuses on the `"RIGHT"` side of the distribution. This means, that amputation of `density` on the right side of `pH`, causes lower values of `density` to become incomplete. 
-
-```{r}
-ggplot(plotdata, aes(pH, density, color = R)) +
-  geom_point() + 
-  scale_color_manual(values = c('red', 'darkblue'), 
-                     labels = c('missing', 'observed'))
-```
-
-The argument `type` determines on which side of the distribution `ampute` focuses.
-
-```{r}
-mads$type
-```
-
-In addition, we see that when we delete the incomplete rows from the dataset, the regression lines change. 
+We see that when we delete the incomplete rows from the dataset, the regression line changes. 
 
 ```{r}
 true_coefs
-MCAR_coefs
 MAR_coefs
 ```
 
@@ -347,10 +308,10 @@ In the following two exercises, we will try two other missing data methods. The 
 
 ---
 
-##### Question 5. Use the code below to mean impute the incomplete data. 
+##### Use the code below to mean impute the incomplete data. 
 
 ```{r eval = FALSE}
-mean <- ...
+mean_density <- ...
 imputations <- rep(...)
 imp_data <- inc_data
 imp_data[...] <- imputations
@@ -359,17 +320,17 @@ imp_data[...] <- imputations
 ---
 
 ```{r}
-mean <- mean(inc_data$density, na.rm = TRUE)
-imputations <- rep(mean, nrow(inc_data[is.na(inc_data$density), ]))
+mean_density <- mean(inc_data$density, na.rm = TRUE)
+imputations <- rep(mean_density, nrow(inc_data[is.na(inc_data$density), ]))
 imp_data <- inc_data
 imp_data[is.na(inc_data$density), 'density'] <- imputations
 ```
 
----
+```{r}
+md.pattern(imp_data)
+```
 
-##### Question 6. What will be the influence on the regression model? 
-
----
+We see that the dataset indeed has become complete now. But what has happened with our model? 
 
 ```{r}
 imp_coefs_mean <- summary(lm(alcohol ~ density, imp_data))$coefficients
@@ -405,7 +366,7 @@ The imputed mean stems from the observed data only. Since the observed data is d
 
 ---
 
-##### Question 7. What happens if we use the observed information in `pH`? 
+##### What happens if we use the observed information in `pH`? 
 
 ````{r eval = FALSE}
 imp_model <- 
@@ -465,33 +426,13 @@ ggplot(imp_data, aes(density, alcohol, color = R)) +
                      labels = c('imputed', 'observed'))
 ```
 
-```{r}
-true_coefs
-MAR_coefs
-imp_coefs_reg
-```
-
 The methods we have covered so far are called *single imputation methods*. There is also *multiple imputation*. In fact, package **mice** is developed especially to make multiple imputation fast and easy. 
 
 In short, multiple imputation imputes every missing value *m* times. This results in *m* datasets, where the observed data is similar in every dataset, and the imputed data different. The analysis of interest is performed on each of the *m* datasets, and the output is pooled with Rubin's pooling rules. 
 
 Multiple imputation is known to give unbiased results for a wide amount of statistical analyses, as well as an honest standard error. That means, the standard error does justice to the uncertainty in the data due to missing data. 
 
-In sum, imputing with `mice` takes 3 steps. 
-
-1. You define the imputation method used for estimating the missing values.
-2. You apply the statistical analyis of interest to each of the imputed datasets.
-3. You pool the results to one final outcome.
-
-For instance:
-
-```{r eval = FALSE}
-imps <- mice(inc_data, m = 10, method = 'norm') 
-fit <- with(imps, lm(alcohol ~ density))
-out <- summary(pool(fit))
-```
-
-Understand the method of multiple imputation and the functionality of `mice` by reading the brilliant article of stef van Buuren:  [mice: Multivariate Imputation by Chained
+Get to know more about the method of multiple imputation and the functionality of `mice` by reading the brilliant article of stef van Buuren:  [mice: Multivariate Imputation by Chained
 Equations in R](https://www.jstatsoft.org/article/view/v045i03/v45i03.pdf)
 
 ## 4. Evaluation
@@ -510,7 +451,8 @@ MCAR, MAR and MNAR.
 
 2. Simple R-functions like 'md.pattern' and 'ampute' help to investigate the missingness
 
-Missingness could occur in different variables. With `ampute`, you can recreate these patterns. With `md.pattern`, you can inspect the patterns and understand more about the relation between the complete and incomplete data. 
+Missingness could occur in different variables. With `ampute`, you can simulate these patterns. With `md.pattern`, you can inspect the patterns 
+and understand more about the relation between the complete and incomplete data. 
 
 3. The appropriateness of a missing data method depends on the missing data problem
 
@@ -520,7 +462,7 @@ For regression analysis with MAR missingness, regression imputation might be suf
 
 ## Contact details
 
-Do not hestitate to ask question by email.
+Do not hestitate to ask questions by email.
 My contact details are on [https://rianneschouten.github.io/](https://rianneschouten.github.io/)
 Also, follow me on twitter:
 
