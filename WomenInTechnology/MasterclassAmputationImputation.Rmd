@@ -8,7 +8,7 @@ output: html_document
 
 <style type="text/css">
 body{ /* Normal  */
-  font-size: 14px;
+  font-size: 16px;
   font-family: Book Antiqua;
 }
 h1.title {
@@ -16,6 +16,9 @@ h1.title {
   color: DarkRed;
 }
 h2 { /* Header 2 */
+  font-size: 24px;
+}
+h3 { /* Header 3 */
   font-size: 22px;
 }
 h5 { /* Header 5 */
@@ -30,17 +33,24 @@ h6 { /* Header 6 */
 
 ---
 
-## Download instructions
+## Preparation
 
-All files can be found in one of my github repositories: [https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology](https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology). To download the files, go to [https://minhaskamal.github.io/DownGit/#/home](https://minhaskamal.github.io/DownGit/#/home) and paste the link of the repository. Then click the button 'Download'. 
+Go to [https://drive.google.com/open?id=1zvLt0gnAR7Zg2CZ_pPbeC7BEdmPMVzsH](https://drive.google.com/open?id=1zvLt0gnAR7Zg2CZ_pPbeC7BEdmPMVzsH) and download the folder to your computer. Then choose
+
+#### Option 1 Open the .html file and **read** along.
+#### Option 2 Open the .R file and **work** along.
+
+## Download instructions for R and RStudio
+
+To actively participate in the masterclass, you need R and RStudio. These open source software packages can be downloaded. Information about installation is available [here](https://courses.edx.org/courses/UTAustinX/UT.7.01x/3T2014/56c5437b88fa43cf828bff5371c6a924/). For R, you go to [https://www.r-project.org/](https://www.r-project.org/). For RStudio, you go to [https://www.rstudio.com/](https://www.rstudio.com/).
+
+All files can be found in the [google drive](https://drive.google.com/open?id=1zvLt0gnAR7Zg2CZ_pPbeC7BEdmPMVzsH) or in github repository: [https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology](https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology). To download the files from the repository, go to [https://minhaskamal.github.io/DownGit/#/home](https://minhaskamal.github.io/DownGit/#/home) and paste the link of the repository. Then click the button 'Download'. 
 
 The folder contains the dataset, some image and 3 other files:
 
 1. The .html file contains everything we will discuss during the masterclass. It shows the explanation, the R code and the output of the R code. You can also use it as a reference for later use. 
 2. The .Rmd file is the markdown code for the .html file. You can open this file in RStudio and change it to your likings. Click on the 'Knit' button to run the file and overwrite the .html file. When you do this the first time, it will ask for the installation of some packages. 
-3. The R code is also saved in a .R file. Open this file with RStudio and run lines by pressing CTRL + ENTER. 
-
-To actively participate in the masterclass, you need R and RStudio. These open source software packages can be downloaded. Information about installation is available [here](https://courses.edx.org/courses/UTAustinX/UT.7.01x/3T2014/56c5437b88fa43cf828bff5371c6a924/). For R, you go to [https://www.r-project.org/](https://www.r-project.org/). For RStudio, you go to [https://www.rstudio.com/](https://www.rstudio.com/).
+3. The R code is also saved in an .R file. Open this file with RStudio and run lines by pressing CTRL + ENTER. 
 
 We start by opening the .R file and running the following lines to install two necessary packages. Installation of packages is a one-time event. 
 
@@ -56,7 +66,7 @@ library(mice, warn.conflicts = FALSE, quietly = TRUE)
 library(ggplot2, warn.conflicts = FALSE, quietly = TRUE)
 ```
 
-Now, we are ready to start! 
+Now, we are good to go! 
 
 ---
 
