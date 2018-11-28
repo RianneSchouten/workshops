@@ -35,7 +35,7 @@ h6 { /* Header 6 */
 
 ## Preparation
 
-Go to [https://drive.google.com/open?id=1zvLt0gnAR7Zg2CZ_pPbeC7BEdmPMVzsH](https://drive.google.com/open?id=1zvLt0gnAR7Zg2CZ_pPbeC7BEdmPMVzsH) and download the folder to your computer. Then choose
+Go to [https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology](https://github.com/RianneSchouten/workshops/tree/master/WomenInTechnology) to find the google drive link and download the folder to your computer. Then choose
 
 #### Option 1 Open the .html file and **read** along.
 #### Option 2 Open the .R file and **work** along.
