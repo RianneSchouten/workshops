@@ -87,10 +87,6 @@ In this workshop we will work through the same four steps. We take some extra ti
 
 A simulation normally contains many repetitions to account for sampling error. We will run the procedure only once. To make sure all of us have the same output, we set a seed. 
 
-```{r}
-set.seed(111)
-```
-
 ---
 
 ## 1. Dataset

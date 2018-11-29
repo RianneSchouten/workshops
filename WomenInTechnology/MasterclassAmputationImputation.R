@@ -14,7 +14,6 @@ library(mice)
 library(ggplot2)
 
 # Introduction
-set.seed(111)
 
 # Complete data
 data <- read.csv("red_wine_quality.txt", 
@@ -64,8 +63,8 @@ mads$weights
 mads$patterns
 
 ### Question 4 ###
-mypatterns <- c(1, 0, 1)
-myweights <- c(0, 0, 1)
+mypatterns <- 
+myweights <- 
 mads <- ampute(data,
                patterns = mypatterns,
                weights =  myweights)
@@ -105,8 +104,9 @@ MAR_coefs
 # Missing data methods
 
 ### Question 5. ###
-mean_density <- ...
-imputations <- rep(...)
+md.pattern(inc_data)
+mean_density <- 
+imputations <- rep() 
 imp_data <- inc_data
 imp_data[...] <- imputations
 
@@ -137,12 +137,12 @@ ggplot(imp_data, aes(density, alcohol, color = R)) +
 
 ### Question 6. ###
 
-imp_model <- lm(density ~ pH, inc_data)
+imp_model <- 
 imp_coefs <- summary(imp_model)$coefficients
 imputations <- 
-  inc_data[is.na(inc_data$density), 'pH'] * imp_coefs[2, 1] + imp_coefs[1, 1]
+  inc_data[] * imp_coefs[2, 1] + imp_coefs[1, 1]
 imp_data <- inc_data
-imp_data[is.na(inc_data$density), 'density'] <- 
+imp_data[] <- 
   imputations
 
 md.pattern(imp_data)
@@ -180,15 +180,14 @@ ggplot(imp_data, aes(density, alcohol, color = R)) +
   scale_color_manual(values = c('orange', 'darkblue'), 
                      labels = c('imputed', 'observed'))
 
+true_coefs
+imp_coefs_reg
+
 # Multiple imputation
 
 imps <- mice(inc_data, m = 5, method = 'norm') 
 fit <- with(imps, lm(alcohol ~ density))
 imp_coefs_mi <- summary(pool(fit))
-
-true_coefs
-imp_coefs_reg
-imp_coefs_mi
 
 ### End of the masterclass ###
 ### Do not hestitate to ask question by email ###
