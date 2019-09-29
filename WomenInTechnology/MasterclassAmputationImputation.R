@@ -46,12 +46,16 @@ ggplot(plotdata, aes(density, alcohol)) +
 mads <- ampute(data)
 summary(mads)
 mads$patterns
+inc_data <- mads$amp
 md.pattern(mads$amp)
 
 ### Question 1 ###
-mypatterns <- 
+mypatterns <- mads$patterns[1:2, ]
+mypatterns[1, ] <- c(1, 0, 0)
+mypatterns
 
-mads <- ampute()
+mads <- ampute(data, 
+               patterns= mypatterns)
 inc_data <- mads$amp
 md.pattern(inc_data)
 
@@ -63,8 +67,8 @@ mads$weights
 mads$patterns
 
 ### Question 4 ###
-mypatterns <- 
-myweights <- 
+mypatterns <- c(1, 0, 1)
+myweights <- c(0, 0, 1) 
 mads <- ampute(data,
                patterns = mypatterns,
                weights =  myweights)
@@ -105,10 +109,11 @@ MAR_coefs
 
 ### Question 5. ###
 md.pattern(inc_data)
-mean_density <- 
-imputations <- rep() 
+mean_density <- mean(inc_data$density, na.rm=TRUE)
+mean_density
+imputations <- rep(mean_density, 800) 
 imp_data <- inc_data
-imp_data[...] <- imputations
+imp_data[is.na(inc_data$density), 'density'] <- imputations
 
 md.pattern(imp_data)
 
@@ -137,12 +142,12 @@ ggplot(imp_data, aes(density, alcohol, color = R)) +
 
 ### Question 6. ###
 
-imp_model <- 
+imp_model <- lm(density ~ pH, inc_data)
 imp_coefs <- summary(imp_model)$coefficients
 imputations <- 
-  inc_data[] * imp_coefs[2, 1] + imp_coefs[1, 1]
+  inc_data[is.na(inc_data$density), 'pH'] * imp_coefs[2, 1] + imp_coefs[1, 1]
 imp_data <- inc_data
-imp_data[] <- 
+imp_data[is.na(inc_data$density), 'density'] <- 
   imputations
 
 md.pattern(imp_data)
