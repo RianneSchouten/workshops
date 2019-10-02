@@ -1,7 +1,7 @@
 ### Workshop RLadies ###
 ### Handling missing data in R ###
 ### Author: Rianne Schouten ###
-### All files available at github.com/rianneschouten ###
+### All files available at github.com/rianneschouten/workshops ###
 
 # Install and load the following packages
 
@@ -31,13 +31,15 @@ com_data <- com_data[, c('quality', 'alcohol', 'density')]
 ## We will not discuss 'ampute()' today but information is 
 ## available at rianneschouten.github.io
 
+inc_data <- ampute(com_data, patterns = c(1, 0, 1))$amp
+
 ## Inspect the dataset again. How do you know that the dataset is now 
 ## incomplete? Can you find some information about which variable(s) is/are 
 ## incomplete and by how many? 
 
 ## Try to find out whether the dataset is MCAR, MAR or MNAR missing?
 ## Do this by: creating a vector that indicates whether a row has a missing 
-## value? 
+## value.
 
 ## Then, create a histogram to compare the distribution of 'quality' for 
 ## rows with missing values and rows without missing values
@@ -81,8 +83,8 @@ com_data <- com_data[, c('quality', 'alcohol', 'density')]
 
 ## Do the same for the regression imputed values. What are the differences? 
 
-## Package 'mice' is developed to perform multiple imputation. But it is also
-## possible to perform single imputation. For mean imputation, the sintax is:
+## Package 'mice' is developed to perform multiple imputation. But it can also
+## be used to perform single imputation. For mean imputation, the sintax is:
 
 mids <- mice(inc_data, method = "mean", m = 1, maxit = 1)
 summary(mids) # gives you the specifications
@@ -148,3 +150,4 @@ mice_mean_data <- complete(mids) # extracts the (first) imputed dataset
 ### End of the workshop ###
 ### Do not hestitate to contact me: riannemargarethaschouten@gmail.com ###
 ### Follow my work at https://rianneschouten.github.io ###
+### Or through twitter: @missD_ta

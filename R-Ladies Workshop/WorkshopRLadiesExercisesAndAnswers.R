@@ -1,7 +1,7 @@
 ### Workshop RLadies ###
 ### Handling missing data in R ###
 ### Author: Rianne Schouten ###
-### All files available at github.com/rianneschouten ###
+### All files available at github.com/rianneschouten/workshops ###
 
 # Install and load the following packages
 
@@ -49,7 +49,7 @@ md.pattern(inc_data)
 
 ## Try to find out whether the dataset is MCAR, MAR or MNAR missing?
 ## Do this by: creating a vector that indicates whether a row has a missing 
-## value? 
+## value.
 
 R1 <- is.na(inc_data$alcohol)
 red_data <- inc_data[R1 == 1, ]
@@ -160,8 +160,8 @@ ggplot(data = reg_data, aes(alcohol)) +
 ### distribution of the imputed values seems a bit more to the right, and a bit
 ### smaller.
 
-## Package 'mice' is developed to perform multiple imputation. But it is also
-## possible to perform single imputation. For mean imputation, the sintax is:
+## Package 'mice' is developed to perform multiple imputation. But it can also
+## be used to perform single imputation. For mean imputation, the sintax is:
 
 mids <- mice(inc_data, method = "mean", m = 1, maxit = 1)
 summary(mids) # gives you the specifications
@@ -277,3 +277,4 @@ mse_test <- mean(sum((compl_test$quality - predictions_test)^2))
 ### End of the workshop ###
 ### Do not hestitate to contact me by email ###
 ### My contact details are at https://rianneschouten.github.io ###
+### Or through twitter: @missD_ta ###
